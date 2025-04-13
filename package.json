@@ -16,6 +16,7 @@
     "@react-navigation/native": "^7.1.6",
     "babel-preset-expo": "^12.0.11",
     "expo": "~52.0.43",
+    "expo-image-picker": "^16.0.6",
     "expo-status-bar": "~2.0.1",
     "expo-web-browser": "~14.0.2",
     "firebase": "^11.6.0",
