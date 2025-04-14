@@ -1,20 +1,21 @@
 import { View, Text } from 'react-native';
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from '../Screens/HomeScreen';
-import ExploreScreen from '../Screens/ExploreScreen';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import HomeScreenStackNav from './HomeScreenStackNav';
+import ScreenStackNav from './ScreenStackNav';
 import AddPostScreen from '../Screens/AddPostScreen';
 import ProfileScreen from '../Screens/ProfileScreen';
-import Ionicons from '@expo/vector-icons/Ionicons';
-
+import ExploreScreen from '../Screens/ExploreScreen';
+import ProfileStackNav from './ProfileStackNav';
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigation() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen
-        name="Home"
-        component={HomeScreen}
+        name="home-nav"
+        component={HomeScreenStackNav}
         options={{
           tabBarLabel: ({ color }) => (
             <Text style={{ color: color, fontSize: 12,maraginBottom:3 }}>Home</Text>
@@ -24,7 +25,7 @@ export default function TabNavigation() {
           )
         }}
       />
-      <Tab.Screen name="Explore" component={ExploreScreen} options={{
+      <Tab.Screen name="Explore" component={ScreenStackNav} options={{
           tabBarLabel: ({ color }) => (
             <Text style={{ color: color, fontSize: 12,maraginBottom:3 }}>Explore</Text>
           ),
@@ -40,7 +41,7 @@ export default function TabNavigation() {
 <Ionicons name="add-circle" size={size} color={color} />
           )
         }}/>
-      <Tab.Screen name="Profile" component={ProfileScreen}  options={{
+      <Tab.Screen name="Profile" component={ProfileStackNav}  options={{
           tabBarLabel: ({ color }) => (
             <Text style={{ color: color, fontSize: 12,maraginBottom:3 }}>Profile</Text>
           ),
