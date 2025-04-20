@@ -214,6 +214,21 @@ export default function ProductDetail() {
 
                 <Text className="text-lg font-bold mt-5">Description</Text>
                 <Text className="text-gray-700 mt-1">{product?.description}</Text>
+
+                {/* Affichage des détails de sous-catégories s'ils existent */}
+                {product.subcategoryDetails && Object.keys(product.subcategoryDetails).length > 0 && (
+                    <View className="mt-5">
+                        <Text className="text-lg font-bold mb-2">Détails supplémentaires</Text>
+                        <View className="bg-gray-50 p-3 rounded-lg">
+                            {Object.entries(product.subcategoryDetails).map(([key, value]) => (
+                                <View key={key} className="flex-row border-b border-gray-200 py-2">
+                                    <Text className="text-gray-600 w-1/3 capitalize">{key.replace(/([A-Z])/g, ' $1')}</Text>
+                                    <Text className="font-medium flex-1">{value}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                )}
             </View>
             
             <View className="p-5 bg-blue-50 border-t border-b border-gray-200">

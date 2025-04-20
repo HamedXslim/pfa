@@ -1,27 +1,49 @@
-import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, FlatList } from 'react-native'
 import React from 'react'
-import PostItem from './PostItem'
-export default function LatestItemList({latestItemList,heading}) {
-  // Vérification des données
+import PostItem from '../../Components/PostItem'
+
+export default function LatestItemList({ latestItemList }) {
+  
   if (!latestItemList || latestItemList.length === 0) {
     return (
-      <View className="mt-3">
-        <Text className="font-bold text-[20px]">{heading}</Text>
-        <Text className="text-gray-500 mt-2">No items available</Text>
+      <View style={styles.container}>
+        <Text style={styles.noItemsText}>
+          Aucun article disponible pour le moment
+        </Text>
       </View>
-    )
+    );
   }
 
   return (
-    <View className="mt-3">
-      <Text className="font-bold text-[20px] mb-2">Latest Items</Text>
-      <FlatList 
+    <View style={styles.container}>
+      <Text style={styles.heading}>Derniers articles</Text>
+      <FlatList
         data={latestItemList}
         numColumns={2}
-        renderItem={({item}) => (
-      <PostItem item={item}/>
-        )}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <PostItem post={item} />}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={false}
       />
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 10,
+  },
+  heading: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    marginLeft: 5,
+  },
+  noItemsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#666',
+    marginTop: 20,
+  }
+});

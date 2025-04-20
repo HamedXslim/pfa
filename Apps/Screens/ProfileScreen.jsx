@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert, ActivityIndicator } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import diary from './../../assets/images/diary.png'
@@ -8,6 +8,17 @@ import { useNavigation } from '@react-navigation/native';
 import { getFirestore, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { app } from '../../firebaseConfig';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { runInitialization } from '../utils/initializeSubcategories';
+
+// Liste des utilisateurs administrateurs (emails)
+const ADMIN_EMAILS = [
+  // Ajouter ici les emails des administrateurs
+  "test@example.com", // Remplacez par votre email pour tester
+  "utilisateur@exemple.fr",
+  "kapukupa4@gmail.com",
+  "oussamatrzd19@gmail.com",
+  "kapuupak5@gmail.com"
+];
 
 export default function ProfileScreen() {
     const { user } = useUser();
@@ -16,6 +27,16 @@ export default function ProfileScreen() {
     const db = getFirestore(app);
     const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [initializing, setInitializing] = useState(false);
+
+    // Vérifier si l'utilisateur est un administrateur
+    useEffect(() => {
+        if (user && user.primaryEmailAddress) {
+            const email = user.primaryEmailAddress.emailAddress;
+            setIsAdmin(ADMIN_EMAILS.includes(email));
+        }
+    }, [user]);
 
     // Surveiller les nouveaux messages
     useEffect(() => {
@@ -57,7 +78,7 @@ export default function ProfileScreen() {
             id: 1,
             name: 'My product',
             icon: diary,
-            path: 'my-product'
+            path: 'MyProducts'
         },
         {
             id: 2,
@@ -79,6 +100,31 @@ export default function ProfileScreen() {
             icon: LogOut
         }
     ];
+
+    // Fonction pour initialiser les sous-catégories
+    const handleInitializeSubcategories = async () => {
+        try {
+            setInitializing(true);
+            const result = await runInitialization();
+            
+            if (result.success) {
+                Alert.alert(
+                    'Succès', 
+                    `${result.count} sous-catégories ont été initialisées dans Firestore.`
+                );
+            } else {
+                Alert.alert(
+                    'Information', 
+                    result.message || 'Les sous-catégories existent déjà ou il y a eu une erreur.'
+                );
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation des sous-catégories:', error);
+            Alert.alert('Erreur', 'Une erreur s\'est produite lors de l\'initialisation des sous-catégories.');
+        } finally {
+            setInitializing(false);
+        }
+    };
 
     const onMenuPress = (item) => {
         if (item.name == 'LogOut') {
@@ -145,6 +191,25 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                 )}
             />
+
+            {/* Section de gestion des sous-catégories (accessible à tous les utilisateurs) */}
+            <View style={styles.adminSection}>
+                <Text style={styles.adminTitle}>Gestion des catégories</Text>
+                
+                <TouchableOpacity 
+                    style={[styles.adminButton, initializing && styles.disabledButton]}
+                    onPress={handleInitializeSubcategories}
+                    disabled={initializing}
+                >
+                    {initializing ? (
+                        <ActivityIndicator size="small" color="white" />
+                    ) : (
+                        <Text style={styles.adminButtonText}>
+                            Initialiser les sous-catégories
+                        </Text>
+                    )}
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -180,5 +245,32 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
+    },
+    adminSection: {
+        marginTop: 30,
+        padding: 15,
+        backgroundColor: '#f8fafc',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    adminTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        color: '#334155',
+    },
+    adminButton: {
+        backgroundColor: '#4f46e5',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    disabledButton: {
+        backgroundColor: '#a5a5a5',
+    },
+    adminButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
 });

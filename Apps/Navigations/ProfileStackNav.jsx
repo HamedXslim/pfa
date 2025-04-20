@@ -15,11 +15,11 @@ export default function ProfileStackNav() {
 options={{
     headerShown:false
 }} />
-<Stack.Screen name='my-product' component={MyProducts}
+<Stack.Screen name='MyProducts' component={MyProducts}
   options={{
     headerStyle: {backgroundColor: '#3b82f6'},
     headerTintColor: '#fff',
-    headerTitle:'My Products'
+    headerTitle:'Mes annonces'
  }} />
  <Stack.Screen name='product-detail' component={ProductDetail}
      options={{
