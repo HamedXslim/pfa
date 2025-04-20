@@ -5,6 +5,7 @@ import ProductDetail from '../Screens/ProductDetail';
 import ProfileScreen from '../Screens/ProfileScreen';
 import MyProducts from '../Screens/MyProducts';
 import ChatScreen from '../Screens/ChatScreen';
+import UserChats from '../Screens/UserChats';
 import { createStackNavigator } from '@react-navigation/stack';
 const Stack=createStackNavigator();
 export default function ProfileStackNav() {
@@ -33,6 +34,15 @@ options={{
      headerStyle: {backgroundColor: '#3b82f6'},
      headerTintColor: '#fff',
      headerTitle: 'Chat'
+   }}
+ />
+ <Stack.Screen
+   name='UserChats'
+   component={UserChats}
+   options={{
+     headerStyle: {backgroundColor: '#3b82f6'},
+     headerTintColor: '#fff',
+     headerTitle: 'Mes Conversations'
    }}
  />
    </Stack.Navigator>

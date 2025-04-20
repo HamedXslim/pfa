@@ -22,11 +22,15 @@ import {
     addDoc, 
     doc, 
     serverTimestamp, 
-    updateDoc 
+    updateDoc, 
+    arrayUnion, 
+    where, 
+    getDocs 
   } from 'firebase/firestore';
   import { useUser } from '@clerk/clerk-expo';
   import { app } from '../../firebaseConfig';
   import Ionicons from '@expo/vector-icons/Ionicons';
+  import { Feather } from '@expo/vector-icons';
   
   export default function ChatScreen() {
       const { params } = useRoute();
@@ -74,6 +78,9 @@ import {
                   Alert.alert('Error', 'Failed to load messages: ' + error.message);
               });
   
+              // Marquer les messages comme lus
+              markMessagesAsRead();
+  
               return () => unsubscribe();
           } catch (error) {
               console.error('Erreur lors de l\'initialisation du listener:', error);
@@ -81,6 +88,21 @@ import {
               Alert.alert('Error', 'Failed to initialize message listener: ' + error.message);
           }
       }, [chatId]);
+  
+      // Marquer les messages comme lus quand l'utilisateur ouvre le chat
+      const markMessagesAsRead = async () => {
+          if (!chatId || !user) return;
+          
+          try {
+              const chatRef = doc(db, 'Chats', chatId);
+              await updateDoc(chatRef, {
+                  readBy: arrayUnion(user.primaryEmailAddress.emailAddress)
+              });
+              console.log("Messages marqués comme lus");
+          } catch (error) {
+              console.error("Erreur lors du marquage des messages comme lus:", error);
+          }
+      };
   
       const sendMessage = async () => {
           const messageText = newMessage.trim();
@@ -108,7 +130,8 @@ import {
               await updateDoc(chatRef, {
                   lastMessage: messageText,
                   lastMessageTime: serverTimestamp(),
-                  lastMessageSender: user.primaryEmailAddress.emailAddress
+                  lastMessageSender: user.primaryEmailAddress.emailAddress,
+                  readBy: [user.primaryEmailAddress.emailAddress] // Réinitialiser les lecteurs
               });
               console.log("Informations du chat mises à jour");
   
