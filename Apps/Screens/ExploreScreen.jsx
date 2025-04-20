@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { app } from '../../firebaseConfig';
-import { getFirestore, getDocs, collection, query, where, orderBy, limit, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { getFirestore, getDocs, collection, query, where, orderBy, onSnapshot, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import PostItem from '../Components/PostItem';
 import { useNavigation } from '@react-navigation/native';
@@ -26,9 +26,12 @@ export default function ExploreScreen() {
   const [categoryList, setCategoryList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategories, setSelectedSubcategories] = useState({});
+  const [selectedSubcategories, setSelectedSubcategories] = useState({}); // Now stores { [subcategoryName]: { value: string, type: string } }
   const [currentSubcategories, setCurrentSubcategories] = useState([]);
   const [subcategoryModalVisible, setSubcategoryModalVisible] = useState(false);
+  const [subcategoryValueModalVisible, setSubcategoryValueModalVisible] = useState(false);
+  const [currentSubcategory, setCurrentSubcategory] = useState(null); // Tracks which subcategory is being edited
+  const [subcategoryOptions, setSubcategoryOptions] = useState([]); // Options for the current subcategory
   const [searchText, setSearchText] = useState('');
   const [filteredPosts, setFilteredPosts] = useState([]);
   const navigation = useNavigation();
@@ -62,19 +65,16 @@ export default function ExploreScreen() {
       if (subcategories.length === 0) {
         console.log(`⚠️ Aucune sous-catégorie trouvée pour ${categoryName}! Tentative d'initialisation...`);
         
-        // Initialisation des sous-catégories pour cette catégorie spécifique
         const result = await initializeSubcategoriesForCategory(categoryName);
         
         if (result.success) {
-          // Réessayer après initialisation
           const newSubcategories = await getSubcategoriesFromFirestore(categoryName);
           console.log(`✅ Sous-catégories chargées après initialisation: ${newSubcategories.length}`);
           setCurrentSubcategories(newSubcategories);
         } else {
           console.log(`❌ Échec de l'initialisation des sous-catégories pour ${categoryName}`);
-          // On continue quand même mais on informe l'utilisateur
           Alert.alert(
-            "Information", 
+            "Information",
             `Certains filtres pour ${categoryName} peuvent ne pas être disponibles.`
           );
         }
@@ -89,12 +89,10 @@ export default function ExploreScreen() {
     }
   };
 
-  // Nouvelle fonction pour initialiser les sous-catégories d'une catégorie spécifique
   const initializeSubcategoriesForCategory = async (categoryName) => {
     try {
       const db = getFirestore(app);
       
-      // Vérifier si des sous-catégories existent pour cette catégorie
       const existingQuery = query(
         collection(db, 'Subcategory'),
         where('categoryName', '==', categoryName)
@@ -106,7 +104,6 @@ export default function ExploreScreen() {
         return { success: false, message: 'Les sous-catégories existent déjà' };
       }
       
-      // Récupérer les sous-catégories définies pour cette catégorie
       const categorySubcategories = subcategories[categoryName];
       
       if (!categorySubcategories || categorySubcategories.length === 0) {
@@ -114,12 +111,10 @@ export default function ExploreScreen() {
         return { success: false, message: 'Pas de sous-catégories définies' };
       }
       
-      // Utiliser un batch pour ajouter les sous-catégories
       const batch = writeBatch(db);
       const subcategoriesRef = collection(db, 'Subcategory');
       let count = 0;
       
-      // Pour chaque sous-catégorie
       categorySubcategories.forEach((subcategory, index) => {
         const docRef = doc(subcategoriesRef);
         batch.set(docRef, {
@@ -131,7 +126,6 @@ export default function ExploreScreen() {
         count++;
       });
       
-      // Exécuter le batch
       await batch.commit();
       console.log(`${count} sous-catégories initialisées pour ${categoryName}`);
       
@@ -146,9 +140,8 @@ export default function ExploreScreen() {
     try {
       setCategoryList([]);
       const querySnapshot = await getDocs(collection(db, 'Category'));
-      querySnapshot.forEach((doc) => {
-        setCategoryList(categoryList => [...categoryList, doc.data()]);
-      });
+      const categories = querySnapshot.docs.map(doc => doc.data());
+      setCategoryList(categories);
     } catch (error) {
       console.error('Erreur lors du chargement des catégories:', error);
     }
@@ -158,29 +151,30 @@ export default function ExploreScreen() {
     try {
       setLoading(true);
       const q = query(collection(db, 'UserPost'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const postData = [];
-      querySnapshot.forEach((doc) => {
-        postData.push({ id: doc.id, ...doc.data() });
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const postData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setPosts(postData);
+        setFilteredPosts(postData);
+        setLoading(false);
+      }, (error) => {
+        console.error('Erreur lors du chargement des annonces:', error);
+        setLoading(false);
       });
-      setPosts(postData);
-      setFilteredPosts(postData);
+      return () => unsubscribe();
     } catch (error) {
       console.error('Erreur lors du chargement des annonces:', error);
-    } finally {
       setLoading(false);
     }
   };
 
-  // Fonction pour filtrer les annonces selon catégories, sous-catégories et texte de recherche
   const filterPosts = () => {
     let filtered = [...posts];
 
     // Filtrer par texte de recherche
     if (searchText) {
       const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(post => 
-        post.title?.toLowerCase().includes(searchLower) || 
+      filtered = filtered.filter(post =>
+        post.title?.toLowerCase().includes(searchLower) ||
         post.description?.toLowerCase().includes(searchLower)
       );
     }
@@ -191,16 +185,17 @@ export default function ExploreScreen() {
     }
 
     // Filtrer par sous-catégories
-    const selectedSubcategoryNames = Object.keys(selectedSubcategories).filter(name => selectedSubcategories[name]);
+    const selectedSubcategoryNames = Object.keys(selectedSubcategories).filter(
+      name => selectedSubcategories[name]?.value
+    );
     if (selectedSubcategoryNames.length > 0) {
       filtered = filtered.filter(post => {
-        // Vérifier si le post a des détails de sous-catégorie
         if (!post.subcategoryDetails) return false;
         
-        // Vérifier si au moins une sous-catégorie sélectionnée correspond
-        return selectedSubcategoryNames.some(subcatName => {
-          const subcatValue = post.subcategoryDetails[subcatName];
-          return subcatValue !== undefined && subcatValue !== '';
+        return selectedSubcategoryNames.every(subcatName => {
+          const selectedValue = selectedSubcategories[subcatName].value;
+          const postValue = post.subcategoryDetails[subcatName];
+          return postValue !== undefined && postValue === selectedValue;
         });
       });
     }
@@ -208,11 +203,32 @@ export default function ExploreScreen() {
     setFilteredPosts(filtered);
   };
 
-  const toggleSubcategorySelection = (subcategoryName) => {
-    setSelectedSubcategories(prev => ({
-      ...prev,
-      [subcategoryName]: !prev[subcategoryName]
-    }));
+  const openSubcategoryValueModal = (subcategory) => {
+    if (subcategory.type === 'select' && subcategory.options) {
+      setCurrentSubcategory(subcategory);
+      setSubcategoryOptions(subcategory.options);
+      setSubcategoryValueModalVisible(true);
+    } else {
+      // For text or number types, toggle as before
+      setSelectedSubcategories(prev => ({
+        ...prev,
+        [subcategory.name]: prev[subcategory.name]?.value
+          ? {}
+          : { value: '', type: subcategory.type }
+      }));
+    }
+  };
+
+  const selectSubcategoryValue = (value) => {
+    if (currentSubcategory) {
+      setSelectedSubcategories(prev => ({
+        ...prev,
+        [currentSubcategory.name]: { value, type: currentSubcategory.type }
+      }));
+      setSubcategoryValueModalVisible(false);
+      setCurrentSubcategory(null);
+      setSubcategoryOptions([]);
+    }
   };
 
   const clearFilters = () => {
@@ -222,8 +238,8 @@ export default function ExploreScreen() {
   };
 
   const hasActiveFilters = () => {
-    return selectedCategory !== null || 
-           Object.values(selectedSubcategories).some(value => value) ||
+    return selectedCategory !== null ||
+           Object.values(selectedSubcategories).some(subcat => subcat.value) ||
            searchText.trim() !== '';
   };
 
@@ -297,15 +313,15 @@ export default function ExploreScreen() {
                 key={subcategory.id || `subcat-${subcategory.name}-${index}`}
                 style={[
                   styles.subcategoryChip,
-                  selectedSubcategories[subcategory.name] && styles.subcategoryChipSelected
+                  selectedSubcategories[subcategory.name]?.value && styles.subcategoryChipSelected
                 ]}
-                onPress={() => toggleSubcategorySelection(subcategory.name)}
+                onPress={() => openSubcategoryValueModal(subcategory)}
               >
                 <Text style={[
                   styles.subcategoryChipText,
-                  selectedSubcategories[subcategory.name] && styles.subcategoryChipTextSelected
+                  selectedSubcategories[subcategory.name]?.value && styles.subcategoryChipTextSelected
                 ]}>
-                  {subcategory.label}
+                  {selectedSubcategories[subcategory.name]?.value || subcategory.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -331,7 +347,7 @@ export default function ExploreScreen() {
             style={styles.emptyImage}
           />
           <Text style={styles.emptyText}>Aucune annonce trouvée</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.emptyButton}
             onPress={clearFilters}
           >
@@ -370,15 +386,20 @@ export default function ExploreScreen() {
                 <TouchableOpacity
                   key={`modal-subcat-${subcategory.id || subcategory.name}-${index}`}
                   style={styles.modalSubcategoryItem}
-                  onPress={() => toggleSubcategorySelection(subcategory.name)}
+                  onPress={() => openSubcategoryValueModal(subcategory)}
                 >
                   <View style={styles.modalSubcategoryCheckbox}>
-                    {selectedSubcategories[subcategory.name] && (
+                    {selectedSubcategories[subcategory.name]?.value && (
                       <FontAwesome name="check" size={16} color="#3b82f6" />
                     )}
                   </View>
                   <View style={styles.modalSubcategoryInfo}>
-                    <Text style={styles.modalSubcategoryTitle}>{subcategory.label}</Text>
+                    <Text style={styles.modalSubcategoryTitle}>
+                      {subcategory.label}
+                      {selectedSubcategories[subcategory.name]?.value
+                        ? `: ${selectedSubcategories[subcategory.name].value}`
+                        : ''}
+                    </Text>
                     {subcategory.description && (
                       <Text style={styles.modalSubcategoryDescription}>
                         {subcategory.description}
@@ -399,6 +420,63 @@ export default function ExploreScreen() {
               <TouchableOpacity
                 style={styles.modalApplyButton}
                 onPress={() => setSubcategoryModalVisible(false)}
+              >
+                <Text style={styles.modalApplyButtonText}>Appliquer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal pour sélectionner les valeurs de sous-catégorie */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={subcategoryValueModalVisible}
+        onRequestClose={() => setSubcategoryValueModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sélectionner {currentSubcategory?.label}</Text>
+              <TouchableOpacity onPress={() => setSubcategoryValueModalVisible(false)}>
+                <FontAwesome name="times" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              {subcategoryOptions.map((option, index) => (
+                <TouchableOpacity
+                  key={`option-${index}`}
+                  style={styles.modalSubcategoryItem}
+                  onPress={() => selectSubcategoryValue(option)}
+                >
+                  <View style={styles.modalSubcategoryCheckbox}>
+                    {selectedSubcategories[currentSubcategory?.name]?.value === option && (
+                      <FontAwesome name="check" size={16} color="#3b82f6" />
+                    )}
+                  </View>
+                  <Text style={styles.modalSubcategoryTitle}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalClearButton}
+                onPress={() => {
+                  setSelectedSubcategories(prev => ({
+                    ...prev,
+                    [currentSubcategory?.name]: {}
+                  }));
+                  setSubcategoryValueModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalClearButtonText}>Effacer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalApplyButton}
+                onPress={() => setSubcategoryValueModalVisible(false)}
               >
                 <Text style={styles.modalApplyButtonText}>Appliquer</Text>
               </TouchableOpacity>
@@ -588,6 +666,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
   },
   modalSubcategoryCheckbox: {
     width: 24,
