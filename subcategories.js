@@ -110,6 +110,13 @@ export const subcategories = {
       label: "État",
       options: ["Neuf avec étiquette", "Neuf sans étiquette", "Très bon état", "Bon état", "État moyen"],
       required: true
+    },
+    {
+      name: "brand",
+      type: "select",
+      label: "Marque",
+      options: ["Zara", "H&M", "Mango", "Pull & Bear", "Bershka", "Nike", "Adidas", "Puma", "Autre"],
+      required: false
     }
   ],
 
@@ -167,6 +174,13 @@ export const subcategories = {
       label: "Montage",
       options: ["Déjà monté", "À monter", "Partiellement monté"],
       required: false
+    },
+    {
+      name: "brand",
+      type: "select",
+      label: "Marque",
+      options: ["IKEA", "Conforama", "Maisons du Monde", "BUT", "Alinéa", "Autre"],
+      required: false
     }
   ],
   
@@ -212,6 +226,20 @@ export const subcategories = {
       label: "État",
       options: ["Neuf", "Comme neuf", "Très bon état", "Bon état", "État moyen"],
       required: true
+    },
+    {
+      name: "storage",
+      type: "select",
+      label: "Stockage",
+      options: ["16 Go", "32 Go", "64 Go", "128 Go", "256 Go", "512 Go", "1 To", "Plus de 1 To"],
+      required: false
+    },
+    {
+      name: "color",
+      type: "text",
+      label: "Couleur",
+      placeholder: "Ex: Noir, Blanc, Or...",
+      required: false
     }
   ],
   
@@ -268,6 +296,22 @@ export const subcategories = {
       min: 1800,
       max: new Date().getFullYear(),
       required: false
+    },
+    {
+      name: "floor",
+      type: "number",
+      label: "Étage",
+      placeholder: "Ex: 3",
+      min: 0,
+      required: false
+    },
+    {
+      name: "bathrooms",
+      type: "number",
+      label: "Salles de bain",
+      placeholder: "Ex: 2",
+      min: 0,
+      required: false
     }
   ],
   
@@ -318,6 +362,27 @@ export const subcategories = {
       label: "Salaire proposé",
       placeholder: "Ex: 35000-45000 TND/an",
       required: false
+    },
+    {
+      name: "location",
+      type: "text",
+      label: "Lieu de travail",
+      placeholder: "Ex: Tunis centre, Sousse...",
+      required: true
+    },
+    {
+      name: "workMode",
+      type: "select",
+      label: "Mode de travail",
+      options: ["Sur site", "Hybride", "Télétravail"],
+      required: false
+    },
+    {
+      name: "company",
+      type: "text",
+      label: "Entreprise",
+      placeholder: "Ex: Nom de l'entreprise",
+      required: false
     }
   ],
   
@@ -355,6 +420,147 @@ export const subcategories = {
       label: "Âge",
       options: [
         "Moins de 1 mois", "1-6 mois", "6-12 mois", "1-2 ans", "2-5 ans", "Plus de 5 ans"
+      ],
+      required: false
+    },
+    {
+      name: "specificType",
+      type: "select",
+      label: "Type spécifique",
+      options: [
+        "Instrument de musique", "Équipement sportif", "Jeu de société", 
+        "Jeu vidéo", "Console", "Livre", "DVD/Blu-ray", "Matériel d'art", "Autre"
+      ],
+      required: false
+    },
+    {
+      name: "material",
+      type: "text",
+      label: "Matériau",
+      placeholder: "Ex: Bois, Plastique, Métal...",
+      required: false
+    }
+  ],
+  
+  // Sous-catégories pour Services
+  Services: [
+    {
+      name: "serviceType",
+      type: "select",
+      label: "Type de service",
+      options: [
+        "Cours particuliers", "Aide à domicile", "Jardinage", "Bricolage", 
+        "Informatique", "Santé et bien-être", "Ménage", "Déménagement", 
+        "Transport", "Événementiel", "Cours de langue", "Autre"
+      ],
+      required: true
+    },
+    {
+      name: "experience",
+      type: "select",
+      label: "Expérience",
+      options: [
+        "Débutant", "1-2 ans", "3-5 ans", "5-10 ans", "Plus de 10 ans"
+      ],
+      required: true
+    },
+    {
+      name: "availability",
+      type: "select",
+      label: "Disponibilité",
+      options: [
+        "Semaine", "Week-end", "Soir", "Journée", "Flexible", "Sur rendez-vous"
+      ],
+      required: true
+    },
+    {
+      name: "pricing",
+      type: "select",
+      label: "Mode de tarification",
+      options: [
+        "À l'heure", "Forfait", "Par séance", "À négocier", "Gratuit"
+      ],
+      required: true
+    },
+    {
+      name: "location",
+      type: "select",
+      label: "Lieu",
+      options: [
+        "À domicile", "En ligne", "En extérieur", "Dans un local", "Flexible"
+      ],
+      required: false
+    },
+    {
+      name: "certification",
+      type: "text",
+      label: "Certification/Diplôme",
+      placeholder: "Ex: Diplôme d'État, Certification...",
+      required: false
+    }
+  ],
+  
+  // Sous-catégories pour Animals
+  Animals: [
+    {
+      name: "animalType",
+      type: "select",
+      label: "Type d'animal",
+      options: [
+        "Chien", "Chat", "Oiseau", "Poisson", "Reptile", 
+        "Rongeur", "Ferme", "Cheval", "Autre"
+      ],
+      required: true
+    },
+    {
+      name: "breed",
+      type: "text",
+      label: "Race",
+      placeholder: "Ex: Berger allemand, Siamois...",
+      required: false
+    },
+    {
+      name: "age",
+      type: "select",
+      label: "Âge",
+      options: [
+        "Bébé", "Jeune", "Adulte", "Senior"
+      ],
+      required: true
+    },
+    {
+      name: "gender",
+      type: "select",
+      label: "Genre",
+      options: [
+        "Mâle", "Femelle"
+      ],
+      required: true
+    },
+    {
+      name: "vaccinated",
+      type: "select",
+      label: "Vaccination",
+      options: [
+        "Vacciné", "Non vacciné", "En cours"
+      ],
+      required: false
+    },
+    {
+      name: "neutered",
+      type: "select",
+      label: "Stérilisé/Castré",
+      options: [
+        "Oui", "Non"
+      ],
+      required: false
+    },
+    {
+      name: "purebreed",
+      type: "select",
+      label: "Race pure",
+      options: [
+        "Oui", "Non", "Croisé"
       ],
       required: false
     }
@@ -446,23 +652,27 @@ export const getAllSubcategories = async () => {
   }
 };
 
-// Fonction pour initialiser les sous-catégories dans Firestore
-export const initializeSubcategoriesInFirestore = async () => {
-  const db = getFirestore(app);
-  
+// Fonction pour initialiser les sous-catégories
+export const runInitialization = async () => {
   try {
+    const db = getFirestore(app);
+    
     // Vérifier si les sous-catégories existent déjà
     const existingQuery = query(collection(db, 'Subcategory'));
     const snapshot = await getDocs(existingQuery);
     
     if (!snapshot.empty) {
-      console.log('Les sous-catégories sont déjà initialisées dans Firestore');
-      return false;
+      console.log('Les sous-catégories existent déjà dans Firestore');
+      return { 
+        success: false, 
+        message: 'Les sous-catégories existent déjà dans Firestore'
+      };
     }
     
     // Utiliser un batch pour ajouter toutes les sous-catégories en une seule opération
     const batch = writeBatch(db);
     const subcategoriesRef = collection(db, 'Subcategory');
+    let count = 0;
     
     // Pour chaque catégorie
     Object.entries(subcategories).forEach(([categoryName, subcategoryList]) => {
@@ -475,17 +685,24 @@ export const initializeSubcategoriesInFirestore = async () => {
           order: index,
           createdAt: new Date().toISOString()
         });
+        count++;
       });
     });
     
     // Exécuter le batch
     await batch.commit();
-    console.log('Toutes les sous-catégories ont été initialisées dans Firestore');
+    console.log(`${count} sous-catégories ont été initialisées dans Firestore`);
     
-    return true;
+    return { 
+      success: true, 
+      count: count 
+    };
   } catch (error) {
     console.error('Erreur lors de l\'initialisation des sous-catégories:', error);
-    return false;
+    return { 
+      success: false, 
+      error: error.message 
+    };
   }
 };
 

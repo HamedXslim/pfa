@@ -14,12 +14,12 @@ import {
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { app } from '../../firebaseConfig';
-import { getFirestore, getDocs, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, getDocs, collection, query, where, orderBy, limit, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import PostItem from '../Components/PostItem';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
-import { getSubcategoriesFromFirestore, runInitialization } from '../../subcategories';
+import { getSubcategoriesFromFirestore, subcategories, runInitialization } from '../../subcategories';
 
 export default function ExploreScreen() {
   const [posts, setPosts] = useState([]);
@@ -61,15 +61,17 @@ export default function ExploreScreen() {
       
       if (subcategories.length === 0) {
         console.log(`⚠️ Aucune sous-catégorie trouvée pour ${categoryName}! Tentative d'initialisation...`);
-        // Si aucune sous-catégorie n'est trouvée, tenter de les initialiser
-        const initResult = await runInitialization();
-        if (initResult.success) {
+        
+        // Initialisation des sous-catégories pour cette catégorie spécifique
+        const result = await initializeSubcategoriesForCategory(categoryName);
+        
+        if (result.success) {
           // Réessayer après initialisation
           const newSubcategories = await getSubcategoriesFromFirestore(categoryName);
           console.log(`✅ Sous-catégories chargées après initialisation: ${newSubcategories.length}`);
           setCurrentSubcategories(newSubcategories);
         } else {
-          console.log(`❌ Échec de l'initialisation des sous-catégories`);
+          console.log(`❌ Échec de l'initialisation des sous-catégories pour ${categoryName}`);
           // On continue quand même mais on informe l'utilisateur
           Alert.alert(
             "Information", 
@@ -84,6 +86,59 @@ export default function ExploreScreen() {
       console.error('Erreur lors du chargement des sous-catégories:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Nouvelle fonction pour initialiser les sous-catégories d'une catégorie spécifique
+  const initializeSubcategoriesForCategory = async (categoryName) => {
+    try {
+      const db = getFirestore(app);
+      
+      // Vérifier si des sous-catégories existent pour cette catégorie
+      const existingQuery = query(
+        collection(db, 'Subcategory'),
+        where('categoryName', '==', categoryName)
+      );
+      const snapshot = await getDocs(existingQuery);
+      
+      if (!snapshot.empty) {
+        console.log(`Des sous-catégories existent déjà pour ${categoryName}`);
+        return { success: false, message: 'Les sous-catégories existent déjà' };
+      }
+      
+      // Récupérer les sous-catégories définies pour cette catégorie
+      const categorySubcategories = subcategories[categoryName];
+      
+      if (!categorySubcategories || categorySubcategories.length === 0) {
+        console.log(`Aucune sous-catégorie définie pour ${categoryName}`);
+        return { success: false, message: 'Pas de sous-catégories définies' };
+      }
+      
+      // Utiliser un batch pour ajouter les sous-catégories
+      const batch = writeBatch(db);
+      const subcategoriesRef = collection(db, 'Subcategory');
+      let count = 0;
+      
+      // Pour chaque sous-catégorie
+      categorySubcategories.forEach((subcategory, index) => {
+        const docRef = doc(subcategoriesRef);
+        batch.set(docRef, {
+          ...subcategory,
+          categoryName,
+          order: index,
+          createdAt: new Date().toISOString()
+        });
+        count++;
+      });
+      
+      // Exécuter le batch
+      await batch.commit();
+      console.log(`${count} sous-catégories initialisées pour ${categoryName}`);
+      
+      return { success: true, count };
+    } catch (error) {
+      console.error(`Erreur lors de l'initialisation des sous-catégories pour ${categoryName}:`, error);
+      return { success: false, error: error.message };
     }
   };
 
