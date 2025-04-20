@@ -1,17 +1,21 @@
 {
   "expo": {
-    "name": "MarketplaceApp_pfa",
-    "slug": "MarketplaceApp_pfa",
+    "name": "MarketPlaceApp_PFA",
+    "slug": "MarketPlaceApp_PFA",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "scheme": "marketpfa",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },

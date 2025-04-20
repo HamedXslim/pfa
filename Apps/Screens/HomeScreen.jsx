@@ -1,4 +1,4 @@
-import { View, Text,Image,ScrollView } from 'react-native'
+import { View, Text, SafeAreaView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Slider from '../Components/HomeScreen/Slider'
 import { collection } from 'firebase/firestore'
@@ -8,6 +8,7 @@ import { getFirestore } from 'firebase/firestore'
 import Header from '../Components/HomeScreen/Header'
 import Categories from '../Components/HomeScreen/Categories'
 import LatestItemList from '../Components/HomeScreen/LatestItemList'
+
 export default function HomeScreen() {
   const db = getFirestore(app);
   const[categoryList,setCategoryList]=useState([]);
@@ -39,18 +40,26 @@ querySnapshot.forEach((doc) => {
     };
 
     /**
-     * 
+     * Récupère les derniers produits ajoutés
      */
-    const getLatestItemList=async()=>{
+    const getLatestItemList = async () => {
       setLatestItemList([]);
-      const querySnapShot=await getDocs(collection(db,'UserPost'))
-      querySnapShot.forEach((doc)=>{
-        console.log("Docs",doc.data())
-        setLatestItemList(latestItemList=>[...latestItemList,doc.data()]);
-      })
+      try {
+        const querySnapShot = await getDocs(collection(db, 'UserPost'));
+        querySnapShot.forEach((doc) => {
+          console.log("Docs", doc.data());
+          setLatestItemList(latestItemList => [...latestItemList, { id: doc.id, ...doc.data() }]);
+        });
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        // Continuer quand même pour ne pas bloquer l'interface
+        setTimeout(() => {
+          getLatestItemList();
+        }, 2000); // Réessayer après 2 secondes
+      }
     }
   return (
-    <ScrollView className="py-8 px-6 bg-white flex-1">
+    <SafeAreaView className="py-8 px-6 bg-white flex-1">
       <Header/>
       {/* Slider */}
       <Slider sliderList={sliderList}/>
@@ -59,6 +68,6 @@ querySnapshot.forEach((doc) => {
      {/* Latest Item List */}
      <LatestItemList latestItemList={latestItemList}
      heading={'Latest items'} />
-    </ScrollView>
+    </SafeAreaView>
   )
 }

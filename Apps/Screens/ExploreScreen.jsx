@@ -18,9 +18,10 @@ export default function ExploreScreen() {
     try {
       setLoading(true);
       const q = query(
-        collection(db, 'UserPost'), // Correction de 'userPost' à 'UserPost'
+        collection(db, 'UserPost'),
         orderBy('createdAt', 'desc')
       );
+      
       const snapshot = await getDocs(q);
       
       const products = [];
@@ -29,8 +30,14 @@ export default function ExploreScreen() {
       });
       
       setProductList(products);
+      console.log("Products fetched successfully:", products.length);
     } catch (error) {
       console.error("Error fetching products:", error);
+      
+      // Attendre un peu puis réessayer en cas d'erreur de permission
+      setTimeout(() => {
+        getAllProducts();
+      }, 3000); // Réessayer après 3 secondes
     } finally {
       setLoading(false);
     }

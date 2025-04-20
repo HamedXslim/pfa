@@ -4,6 +4,7 @@ import { app } from '../../firebaseConfig';
 import ProductDetail from '../Screens/ProductDetail';
 import ProfileScreen from '../Screens/ProfileScreen';
 import MyProducts from '../Screens/MyProducts';
+import ChatScreen from '../Screens/ChatScreen';
 import { createStackNavigator } from '@react-navigation/stack';
 const Stack=createStackNavigator();
 export default function ProfileStackNav() {
@@ -25,6 +26,15 @@ options={{
          headerTintColor: '#fff',
          headerTitle:'Detail'
       }}/>
+ <Stack.Screen
+   name='ChatScreen'
+   component={ChatScreen}
+   options={{
+     headerStyle: {backgroundColor: '#3b82f6'},
+     headerTintColor: '#fff',
+     headerTitle: 'Chat'
+   }}
+ />
    </Stack.Navigator>
   )
 }
