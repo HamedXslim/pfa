@@ -1,7 +1,7 @@
 // AddPostScreen.js
 import { View, ScrollView, Text, TextInput, StyleSheet, Button, TouchableOpacity, Image, ToastAndroid, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 import { getFirestore, getDocs, collection, addDoc, query, where } from 'firebase/firestore';
 import { Formik } from 'formik';
 import { useUser } from '@clerk/clerk-expo';
@@ -13,7 +13,7 @@ import { FontAwesome } from '@expo/vector-icons';
 
 export default function AddPostScreen() {
   const [image, setImage] = useState(null);
-  const db = getFirestore(app);
+  // db is now imported directly from firebase.js
   const storage = getStorage();
   const { user } = useUser();
   const [categoryList, setCategoryList] = useState([]);

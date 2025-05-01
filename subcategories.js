@@ -1,6 +1,5 @@
 // Sous-catégories pour chaque catégorie
-import { getFirestore, collection, getDocs, query, where, addDoc, writeBatch, doc } from 'firebase/firestore';
-import { app } from './firebaseConfig';
+import { firebase } from './firebase.native.js';
 
 export const subcategories = {
   // Sous-catégories pour Car
@@ -576,13 +575,11 @@ export const getSubcategoriesFromFirestore = async (categoryName) => {
   try {
     if (!categoryName) return [];
     
-    const db = getFirestore(app);
-    const q = query(
-      collection(db, 'Subcategory'),
-      where('categoryName', '==', categoryName)
-    );
+    const db = firebase.firestore();
+    const querySnapshot = await db.collection('Subcategory')
+      .where('categoryName', '==', categoryName)
+      .get();
     
-    const querySnapshot = await getDocs(q);
     const subcategories = [];
     
     querySnapshot.forEach((doc) => {
@@ -613,14 +610,12 @@ export const getSubcategoriesFromFirestore = async (categoryName) => {
  */
 export const checkSubcategoryExists = async (categoryName, subcategoryName) => {
   try {
-    const db = getFirestore(app);
-    const q = query(
-      collection(db, 'Subcategory'),
-      where('categoryName', '==', categoryName),
-      where('name', '==', subcategoryName)
-    );
+    const db = firebase.firestore();
+    const querySnapshot = await db.collection('Subcategory')
+      .where('categoryName', '==', categoryName)
+      .where('name', '==', subcategoryName)
+      .get();
     
-    const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
   } catch (error) {
     console.error('Erreur lors de la vérification de sous-catégorie:', error);
@@ -634,8 +629,8 @@ export const checkSubcategoryExists = async (categoryName, subcategoryName) => {
  */
 export const getAllSubcategories = async () => {
   try {
-    const db = getFirestore(app);
-    const querySnapshot = await getDocs(collection(db, 'Subcategory'));
+    const db = firebase.firestore();
+    const querySnapshot = await db.collection('Subcategory').get();
     const subcategories = [];
     
     querySnapshot.forEach((doc) => {
@@ -655,11 +650,10 @@ export const getAllSubcategories = async () => {
 // Fonction pour initialiser les sous-catégories
 export const runInitialization = async () => {
   try {
-    const db = getFirestore(app);
+    const db = firebase.firestore();
     
     // Vérifier si les sous-catégories existent déjà
-    const existingQuery = query(collection(db, 'Subcategory'));
-    const snapshot = await getDocs(existingQuery);
+    const snapshot = await db.collection('Subcategory').get();
     
     if (!snapshot.empty) {
       console.log('Les sous-catégories existent déjà dans Firestore');
@@ -670,15 +664,14 @@ export const runInitialization = async () => {
     }
     
     // Utiliser un batch pour ajouter toutes les sous-catégories en une seule opération
-    const batch = writeBatch(db);
-    const subcategoriesRef = collection(db, 'Subcategory');
+    const batch = db.batch();
     let count = 0;
     
     // Pour chaque catégorie
     Object.entries(subcategories).forEach(([categoryName, subcategoryList]) => {
       // Pour chaque sous-catégorie
       subcategoryList.forEach((subcategory, index) => {
-        const docRef = doc(subcategoriesRef);
+        const docRef = db.collection('Subcategory').doc();
         batch.set(docRef, {
           ...subcategory,
           categoryName,
@@ -709,4 +702,4 @@ export const runInitialization = async () => {
 // Fonction helper locale pour obtenir les sous-catégories d'une catégorie
 export const getSubcategories = (category) => {
   return subcategories[category] || [];
-}; 
+};

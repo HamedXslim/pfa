@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-expo';
 import { useNavigation } from '@react-navigation/native';
 import { getFirestore, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function UserChats() {
   const { user } = useUser();
   const navigation = useNavigation();
-  const db = getFirestore(app);
+  // db is now imported directly from firebase.js
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 

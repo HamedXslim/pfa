@@ -13,9 +13,8 @@ import {
   Alert
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { app } from '../../firebaseConfig';
-import { getFirestore, getDocs, collection, query, where, orderBy, onSnapshot, doc, setDoc, writeBatch } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { firebase, app, auth, db } from '../../firebase.native.js';
+import { getDocs, collection, query, where, orderBy, onSnapshot, doc, setDoc, writeBatch } from 'firebase/firestore';
 import PostItem from '../Components/PostItem';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
@@ -36,7 +35,6 @@ export default function ExploreScreen() {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const navigation = useNavigation();
   const numColumns = 2;
-  const db = getFirestore(app);
 
   useEffect(() => {
     getCategoryList();
@@ -91,7 +89,7 @@ export default function ExploreScreen() {
 
   const initializeSubcategoriesForCategory = async (categoryName) => {
     try {
-      const db = getFirestore(app);
+      const db = firebase.firestore();
       
       const existingQuery = query(
         collection(db, 'Subcategory'),
@@ -139,7 +137,7 @@ export default function ExploreScreen() {
   const getCategoryList = async () => {
     try {
       setCategoryList([]);
-      const querySnapshot = await getDocs(collection(db, 'Category'));
+      const querySnapshot = await getDocs(collection(firebase.firestore(), 'Category'));
       const categories = querySnapshot.docs.map(doc => doc.data());
       setCategoryList(categories);
     } catch (error) {
@@ -150,7 +148,7 @@ export default function ExploreScreen() {
   const getAllPosts = async () => {
     try {
       setLoading(true);
-      const q = query(collection(db, 'UserPost'), orderBy('createdAt', 'desc'));
+      const q = query(collection(firebase.firestore(), 'UserPost'), orderBy('createdAt', 'desc'));
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const postData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setPosts(postData);

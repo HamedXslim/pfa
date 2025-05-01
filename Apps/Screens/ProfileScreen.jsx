@@ -6,7 +6,7 @@ import LogOut from './../../assets/images/LogOut.png'
 import Search from './../../assets/images/Search.png'
 import { useNavigation } from '@react-navigation/native';
 import { getFirestore, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { runInitialization } from '../utils/initializeSubcategories';
 
@@ -24,7 +24,7 @@ export default function ProfileScreen() {
     const { user } = useUser();
     const navigation = useNavigation();
     const { isLoaded, signOut } = useAuth();
-    const db = getFirestore(app);
+    // db is now imported directly from firebase.js
     const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);

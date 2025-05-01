@@ -28,7 +28,7 @@ import {
     getDocs 
   } from 'firebase/firestore';
   import { useUser } from '@clerk/clerk-expo';
-  import { app } from '../../firebaseConfig';
+  import { app, db, auth, storage } from '../../firebase';
   import Ionicons from '@expo/vector-icons/Ionicons';
   import { Feather } from '@expo/vector-icons';
   
@@ -36,7 +36,7 @@ import {
       const { params } = useRoute();
       const { chatId, product } = params;
       const { user } = useUser();
-      const db = getFirestore(app);
+      // db is now imported directly from firebase.js
       const [messages, setMessages] = useState([]);
       const [newMessage, setNewMessage] = useState('');
       const [loading, setLoading] = useState(true);

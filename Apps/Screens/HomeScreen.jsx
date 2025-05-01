@@ -3,14 +3,14 @@ import React, { useEffect, useState } from 'react'
 import Slider from '../Components/HomeScreen/Slider'
 import { collection } from 'firebase/firestore'
 import { getDocs } from 'firebase/firestore'
-import { app } from '../../firebaseConfig'
+import { app, db, auth, storage } from '../../firebase';
 import { getFirestore } from 'firebase/firestore'
 import Header from '../Components/HomeScreen/Header'
 import Categories from '../Components/HomeScreen/Categories'
 import LatestItemList from '../Components/HomeScreen/LatestItemList'
 
 export default function HomeScreen() {
-  const db = getFirestore(app);
+  // db is now imported directly from firebase.js
   const[categoryList,setCategoryList]=useState([]);
   const [sliderList,setSliderList]=useState([]);
   const [latestItemList,setLatestItemList]=useState([]);

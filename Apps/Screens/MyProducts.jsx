@@ -4,7 +4,7 @@ import { collection, getDocs, getFirestore, query, where } from 'firebase/firest
 import { useUser } from '@clerk/clerk-expo'
 
 import LatestItemList from '../Components/HomeScreen/LatestItemList'
-import { app } from '../../firebaseConfig'
+import { app, db, auth, storage } from '../../firebase';
 import { useNavigation } from '@react-navigation/native'
 
 export default function MyProducts() {

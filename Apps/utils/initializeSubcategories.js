@@ -1,5 +1,5 @@
 import { getFirestore, collection, getDocs, addDoc, writeBatch, doc } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 
 // Sous-catégories pour chaque catégorie
 const subcategories = {
@@ -218,7 +218,7 @@ const subcategories = {
 
 // Fonction pour initialiser les sous-catégories dans Firestore
 export const initializeSubcategories = async () => {
-  const db = getFirestore(app);
+  // db is now imported directly from firebase.js
   
   try {
     console.log("Début de l'initialisation des sous-catégories...");

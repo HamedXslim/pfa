@@ -1,13 +1,13 @@
 import { View, ActivityIndicator, Text } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 import { useRoute } from '@react-navigation/native';
 import LatestItemList from '../Components/HomeScreen/LatestItemList';
 
 export default function ItemList() {
     const { params } = useRoute();
-    const db = getFirestore(app);
+    // db is now imported directly from firebase.js
     const [itemList, setItemList] = useState([]);
     const [loading,setLoading]=useState(false);
     useEffect(() => {

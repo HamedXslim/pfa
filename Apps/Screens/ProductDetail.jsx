@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-expo';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Share from 'expo-sharing';
 
@@ -11,7 +11,7 @@ export default function ProductDetail() {
     const { params } = useRoute();
     const [product, setProduct] = useState({});
     const { user } = useUser();
-    const db = getFirestore(app);
+    // db is now imported directly from firebase.js
     const navigation = useNavigation();
 
     useEffect(() => {

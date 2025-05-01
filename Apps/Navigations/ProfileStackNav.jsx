@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native'
 import React from 'react'
-import { app } from '../../firebaseConfig';
+import { app, db, auth, storage } from '../../firebase';
 import ProductDetail from '../Screens/ProductDetail';
 import ProfileScreen from '../Screens/ProfileScreen';
 import MyProducts from '../Screens/MyProducts';
