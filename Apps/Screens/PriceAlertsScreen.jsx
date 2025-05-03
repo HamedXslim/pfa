@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
-  StyleSheet
+  StyleSheet,
+  Modal
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -22,6 +23,25 @@ export default function PriceAlertsScreen() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [newTargetPrice, setNewTargetPrice] = useState('');
+  const [modalLoading, setModalLoading] = useState(false);
+
+  // Add back button to header
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile', { screen: 'profile-tab' })}
+          style={{ marginLeft: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (!user) return;
@@ -65,21 +85,72 @@ export default function PriceAlertsScreen() {
         
         // Get product details for each alert
         const productsData = {};
+        const notificationPromises = [];
         
         for (const alert of alertsData) {
           try {
             if (!productsData[alert.postId]) {
               const productDoc = await db.collection('UserPost').doc(alert.postId).get();
               if (productDoc.exists) {
-                productsData[alert.postId] = {
+                const productData = {
                   id: productDoc.id,
                   ...productDoc.data()
                 };
+                productsData[alert.postId] = productData;
+                
+                // Check if price has dropped below target and create notification if needed
+                const currentPrice = parseFloat(productData.price);
+                const targetPrice = parseFloat(alert.targetPrice);
+                
+                // If current price is now at or below target price and we haven't notified yet
+                if (currentPrice <= targetPrice && !alert.notified) {
+                  // Create notification
+                  notificationPromises.push(
+                    db.collection('Notifications').add({
+                      userEmail: user.primaryEmailAddress.emailAddress,
+                      postId: alert.postId,
+                      message: `Prix baissé! ${productData.title} est maintenant à ${currentPrice} TND (votre cible: ${targetPrice} TND)`,
+                      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                      read: false,
+                      type: 'price_alert'
+                    })
+                  );
+                  
+                  // Mark alert as notified
+                  notificationPromises.push(
+                    db.collection('PriceAlerts').doc(alert.id).update({
+                      notified: true,
+                      updatedAt: new Date().toISOString()
+                    })
+                  );
+                  
+                  // Show alert to user
+                  Alert.alert(
+                    'Prix baissé!',
+                    `${productData.title} est maintenant à ${currentPrice} TND (votre cible: ${targetPrice} TND)`,
+                    [{ text: 'OK' }]
+                  );
+                }
+                
+                // If price went back up, reset notification flag
+                if (currentPrice > targetPrice && alert.notified) {
+                  notificationPromises.push(
+                    db.collection('PriceAlerts').doc(alert.id).update({
+                      notified: false,
+                      updatedAt: new Date().toISOString()
+                    })
+                  );
+                }
               }
             }
           } catch (err) {
             console.error('Error fetching product:', err);
           }
+        }
+        
+        // Process all notification promises
+        if (notificationPromises.length > 0) {
+          await Promise.all(notificationPromises);
         }
         
         setProducts(productsData);
@@ -113,9 +184,10 @@ export default function PriceAlertsScreen() {
       return;
     }
     
-    Alert.prompt(
+    // Using Alert.alert with TextInput instead of Alert.prompt for better cross-platform support
+    Alert.alert(
       'Edit Price Alert',
-      `Current price: ${product.price} TND\nEnter your target price:`,
+      `Current price: ${product.price} TND\nEnter your target price below:`,
       [
         {
           text: 'Cancel',
@@ -123,33 +195,55 @@ export default function PriceAlertsScreen() {
         },
         {
           text: 'Update',
-          onPress: async (targetPrice) => {
-            const targetPriceNum = parseFloat(targetPrice);
-            
-            if (isNaN(targetPriceNum) || targetPriceNum <= 0) {
-              Alert.alert('Error', 'Please enter a valid price');
-              return;
-            }
-            
-            try {
-              const db = firebase.firestore();
-              await db.collection('PriceAlerts').doc(alert.id).update({
-                targetPrice: targetPriceNum,
-                currentPrice: parseFloat(product.price),
-                updatedAt: new Date().toISOString()
-              });
-              
-              Alert.alert('Success', 'Price alert updated');
-            } catch (error) {
-              console.error('Error updating price alert:', error);
-              Alert.alert('Error', 'Failed to update price alert');
-            }
+          onPress: async () => {
+            // We'll use a different approach since we can't get input directly from Alert on Android
+            showEditAlertDialog(alert, product);
           }
         }
-      ],
-      'plain-text',
-      alert.targetPrice.toString()
+      ]
     );
+  };
+  
+  // Function to show a custom dialog for editing price alerts
+  const showEditAlertDialog = (alert, product) => {
+    setModalVisible(true);
+    setSelectedAlert(alert);
+    setSelectedProduct(product);
+    setNewTargetPrice(alert.targetPrice.toString());
+  };
+  
+  // Function to save the updated price alert
+  const saveUpdatedAlert = async () => {
+    if (!selectedAlert || !selectedProduct) return;
+    
+    const targetPriceNum = parseFloat(newTargetPrice);
+    
+    if (isNaN(targetPriceNum) || targetPriceNum <= 0) {
+      Alert.alert('Error', 'Please enter a valid price');
+      return;
+    }
+    
+    try {
+      setModalLoading(true);
+      const db = firebase.firestore();
+      await db.collection('PriceAlerts').doc(selectedAlert.id).update({
+        targetPrice: targetPriceNum,
+        currentPrice: parseFloat(selectedProduct.price),
+        updatedAt: new Date().toISOString()
+      });
+      
+      setModalVisible(false);
+      setModalLoading(false);
+      setSelectedAlert(null);
+      setSelectedProduct(null);
+      setNewTargetPrice('');
+      
+      Alert.alert('Success', 'Price alert updated');
+    } catch (error) {
+      setModalLoading(false);
+      console.error('Error updating price alert:', error);
+      Alert.alert('Error', 'Failed to update price alert');
+    }
   };
 
   const renderItem = ({ item }) => {
@@ -250,6 +344,166 @@ export default function PriceAlertsScreen() {
           </TouchableOpacity>
         </View>
       )}
+      
+      {/* Modal for editing price alerts */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(false);
+          setSelectedAlert(null);
+          setSelectedProduct(null);
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Edit Price Alert</Text>
+            
+            {selectedProduct && (
+              <View style={styles.productInfo}>
+                <Image 
+                  source={{ uri: selectedProduct.image }}
+                  style={styles.productImage}
+                />
+                <Text style={styles.productTitle} numberOfLines={1}>
+                  {selectedProduct.title}
+                </Text>
+                <Text style={styles.productPrice}>
+                  Current Price: {selectedProduct.price} TND
+                </Text>
+              </View>
+            )}
+            
+            <Text style={styles.label}>Your Target Price:</Text>
+            <TextInput
+              style={styles.input}
+              value={newTargetPrice}
+              onChangeText={setNewTargetPrice}
+              placeholder="Enter target price"
+              keyboardType="numeric"
+            />
+            
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonCancel]}
+                onPress={() => {
+                  setModalVisible(false);
+                  setSelectedAlert(null);
+                  setSelectedProduct(null);
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSave, modalLoading && styles.buttonDisabled]}
+                onPress={saveUpdatedAlert}
+                disabled={modalLoading}
+              >
+                {modalLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+  },
+  modalView: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#3b82f6'
+  },
+  productInfo: {
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#f0f9ff',
+    padding: 12,
+    borderRadius: 8
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 8
+  },
+  productTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  productPrice: {
+    fontSize: 14,
+    color: '#3b82f6',
+    fontWeight: '500'
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  buttonCancel: {
+    backgroundColor: '#e5e7eb',
+    marginRight: 8
+  },
+  buttonSave: {
+    backgroundColor: '#3b82f6',
+    marginLeft: 8
+  },
+  buttonDisabled: {
+    opacity: 0.7
+  },
+  buttonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#fff'
+  }
+});

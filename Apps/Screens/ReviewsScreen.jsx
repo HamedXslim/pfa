@@ -8,13 +8,16 @@ import {
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUser } from '@clerk/clerk-expo';
 import { firebase } from '../../firebase.native.js';
 import { FontAwesome } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function ReviewsScreen() {
   const { user } = useUser();
@@ -35,12 +38,20 @@ export default function ReviewsScreen() {
     if (!sellerId) return;
     
     navigation.setOptions({
-      title: `Reviews for ${sellerName}`,
-      headerTitleStyle: { fontWeight: 'bold' }
+      title: `Reviews for ${sellerName || 'Seller'}`,
+      headerTitleStyle: { fontWeight: 'bold' },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile', { screen: 'profile-tab' })}
+          style={{ marginLeft: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+      )
     });
 
     fetchReviews();
-  }, [sellerId]);
+  }, [sellerId, sellerName]);
 
   const fetchReviews = async () => {
     if (!sellerId) return;
@@ -49,24 +60,37 @@ export default function ReviewsScreen() {
       setLoading(true);
       const db = firebase.firestore();
       
-      // Get reviews for this seller
+      // Get reviews for the seller
+      // Note: This query requires a composite index. 
+      // You need to create the index by visiting:
+      // https://console.firebase.google.com/v1/r/project/pfa2025-31274/firestore/indexes?create_composite=Ck1wcm9qZWN0cy9wZmEyMDI1LTMxMjc0L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9SZXZpZXdzL2luZGV4ZXMvXxABGgwKCHNlbGxlcklkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg
+      
+      // For now, we'll get reviews without ordering and sort them manually
       const reviewsRef = db.collection('Reviews')
-        .where('sellerId', '==', sellerId)
-        .orderBy('createdAt', 'desc');
+        .where('sellerId', '==', sellerId);
+      
+      // Once you've created the index, you can uncomment this line and remove the manual sorting below
+      // .orderBy('createdAt', 'desc');
       
       const unsubscribe = reviewsRef.onSnapshot((snapshot) => {
         const reviewsData = snapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          reviewerName: doc.data().reviewerName || 'Anonymous',
+          reviewText: doc.data().reviewText || 'No comment provided',
+          rating: doc.data().rating || 1
         }));
         
-        // Calculate average rating
+        // Sort manually by createdAt in descending order (newest first)
+        reviewsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
         if (reviewsData.length > 0) {
           const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
           setAverageRating(totalRating / reviewsData.length);
+        } else {
+          setAverageRating(0);
         }
         
-        // Check if current user has already reviewed this seller
         if (user) {
           const userReview = reviewsData.find(
             review => review.reviewerEmail === user.primaryEmailAddress.emailAddress
@@ -89,6 +113,7 @@ export default function ReviewsScreen() {
     } catch (error) {
       console.error('Error fetching reviews:', error);
       setLoading(false);
+      Alert.alert('Error', 'Failed to load reviews');
     }
   };
 
@@ -107,7 +132,6 @@ export default function ReviewsScreen() {
       const db = firebase.firestore();
       
       if (userHasReviewed) {
-        // Update existing review
         await db.collection('Reviews').doc(userReviewId).update({
           rating,
           reviewText,
@@ -116,13 +140,12 @@ export default function ReviewsScreen() {
         
         Alert.alert('Success', 'Your review has been updated');
       } else {
-        // Add new review
         const reviewData = {
           sellerId,
-          sellerName,
+          sellerName: sellerName || 'Unknown',
           reviewerEmail: user.primaryEmailAddress.emailAddress,
-          reviewerName: user.fullName,
-          reviewerImage: user.imageUrl,
+          reviewerName: user.fullName || 'Anonymous',
+          reviewerImage: user.imageUrl || '',
           rating,
           reviewText,
           createdAt: new Date().toISOString()
@@ -132,7 +155,6 @@ export default function ReviewsScreen() {
         Alert.alert('Success', 'Your review has been submitted');
       }
       
-      // Reset form and close modal
       setReviewText('');
       setRating(5);
       setModalVisible(false);
@@ -149,10 +171,7 @@ export default function ReviewsScreen() {
       'Delete Review',
       'Are you sure you want to delete your review?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -177,7 +196,6 @@ export default function ReviewsScreen() {
   const editReview = () => {
     if (!userReviewId) return;
     
-    // Find user's review
     const userReview = reviews.find(review => review.id === userReviewId);
     
     if (userReview) {
@@ -250,11 +268,10 @@ export default function ReviewsScreen() {
 
   return (
     <View className="flex-1 bg-gray-100">
-      {/* Review Summary */}
       <View className="bg-white p-4 mb-2">
         <View className="flex-row justify-between items-center">
           <View>
-            <Text className="text-xl font-bold">{sellerName}</Text>
+            <Text className="text-xl font-bold">{sellerName || 'Seller'}</Text>
             <View className="flex-row items-center mt-1">
               {renderStars(Math.round(averageRating))}
               <Text className="ml-2 text-gray-700">
@@ -276,14 +293,8 @@ export default function ReviewsScreen() {
                   'You already reviewed this seller',
                   'Would you like to edit your review?',
                   [
-                    {
-                      text: 'Cancel',
-                      style: 'cancel'
-                    },
-                    {
-                      text: 'Edit Review',
-                      onPress: editReview
-                    }
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Edit Review', onPress: editReview }
                   ]
                 );
               } else {
@@ -298,10 +309,10 @@ export default function ReviewsScreen() {
         </View>
       </View>
       
-      {/* Reviews List */}
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <Text>Loading reviews...</Text>
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text className="mt-2 text-gray-600">Loading reviews...</Text>
         </View>
       ) : reviews.length > 0 ? (
         <FlatList
@@ -320,7 +331,6 @@ export default function ReviewsScreen() {
         </View>
       )}
       
-      {/* Review Modal */}
       <Modal
         animationType="slide"
         transparent={true}

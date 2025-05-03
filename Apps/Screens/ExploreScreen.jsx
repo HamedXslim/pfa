@@ -171,10 +171,33 @@ export default function ExploreScreen() {
     // Filtrer par texte de recherche
     if (searchText) {
       const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.title?.toLowerCase().includes(searchLower) ||
-        post.description?.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(post => {
+        // Check title and description
+        if (post.title?.toLowerCase().includes(searchLower) || 
+            post.description?.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        
+        // Check category
+        if (post.category?.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        
+        // Check all subcategory details
+        if (post.subcategoryDetails) {
+          for (const key in post.subcategoryDetails) {
+            const value = post.subcategoryDetails[key];
+            if (value && typeof value === 'string' && value.toLowerCase().includes(searchLower)) {
+              console.log(`Match found in subcategory ${key}: ${value}`);
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      });
+      
+      console.log(`Search for '${searchText}' found ${filtered.length} results`);
     }
 
     // Filtrer par catégorie

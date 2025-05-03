@@ -4,6 +4,8 @@ import ExploreScreen from '../Screens/ExploreScreen';
 import { createStackNavigator } from '@react-navigation/stack'
 import ProductDetail from '../Components/ProductDetail';
 import ChatScreen from '../Screens/ChatScreen';
+import ItemList from '../Components/ItemList';
+import SearchResultsScreen from '../Screens/SearchResultsScreen';
 const stack=createStackNavigator();
 export default function ScreenStackNav() {
 
@@ -28,6 +30,23 @@ export default function ScreenStackNav() {
             headerStyle: {backgroundColor: '#3b82f6'},
             headerTintColor: '#fff',
             headerTitle: 'Chat'
+        }}
+    />
+    <stack.Screen
+        name='item-list'
+        component={ItemList}
+        options={({ route }) => ({
+            title: route.params.searchQuery ? `Search: ${route.params.searchQuery}` : route.params.category,
+            headerStyle: {backgroundColor: '#3b82f6'},
+            headerTintColor: '#fff',
+        })}
+    />
+    <stack.Screen
+        name='search-results'
+        component={SearchResultsScreen}
+        options={{
+            headerStyle: {backgroundColor: '#3b82f6'},
+            headerTintColor: '#fff',
         }}
     />
     </stack.Navigator>

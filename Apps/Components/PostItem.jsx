@@ -13,11 +13,12 @@ export default function PostItem({ post }) {
   return (
     <TouchableOpacity
       className="flex-1 m-2 border-[1px] border-slate-200 rounded-lg p-2"
-      onPress={() =>
-        navigation.push('product-detail', {
+      onPress={() => {
+        // Use navigate instead of push to prevent duplicate screens
+        navigation.navigate('product-detail', {
           product: post,
-        })
-      }
+        });
+      }}
     >
       <Image
         source={{ uri: post.image || 'https://via.placeholder.com/150' }}

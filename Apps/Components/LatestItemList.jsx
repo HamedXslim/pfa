@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import React from 'react';
-import PostItem from '../../Components/PostItem';
+import PostItem from './PostItem';
 
 export default function LatestItemList({ latestItemList }) {
   // Ensure latestItemList is an array and filter out invalid items

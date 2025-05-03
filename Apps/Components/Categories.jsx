@@ -30,10 +30,13 @@ export default function Categories({ categoryList }) {
               }
               className="flex-1 items-center justify-center p-2 border-[1px] border-blue-200 m-1 h-[80px] rounded-lg bg-blue-50"
             >
-              <Image
-                source={{ uri: item.icon || 'https://via.placeholder.com/40' }}
-                className="w-[40px] h-[40px] p-2"
-              />
+              <View className="w-[40px] h-[40px] items-center justify-center bg-white rounded-full">
+                <Image
+                  source={{ uri: item.icon || 'https://via.placeholder.com/40' }}
+                  className="w-[24px] h-[24px]"
+                  resizeMode="contain"
+                />
+              </View>
               <Text className="text-[12px] mt-1">{item.name}</Text>
             </TouchableOpacity>
           )}

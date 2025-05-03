@@ -1,11 +1,30 @@
-import { View, Text, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, SafeAreaView, ActivityIndicator, FlatList, StyleSheet } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import Slider from '../Components/Slider';
 import { collection, getDocs } from 'firebase/firestore';
 import { app, db, auth, storage } from '../../firebase';
 import Header from '../Components/Header';
 import Categories from '../Components/Categories';
-import LatestItemList from '../Components/LatestItemList';
+import PostItem from '../Components/PostItem';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 10,
+  },
+  heading: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    marginLeft: 5,
+  },
+  noItemsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#666',
+    marginTop: 20,
+  },
+});
 
 export default function HomeScreen() {
   const [categoryList, setCategoryList] = useState([]);
@@ -103,6 +122,40 @@ export default function HomeScreen() {
     );
   }
 
+  // Function to render latest items
+  const renderLatestItems = () => {
+    // Ensure latestItemList is an array and filter out invalid items
+    const validItemList = Array.isArray(latestItemList)
+      ? latestItemList.filter(item => item && typeof item === 'object' && item.id && item.image && typeof item.image === 'string')
+      : [];
+
+    console.log('LatestItemList validItemList:', validItemList);
+
+    if (validItemList.length === 0) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.noItemsText}>
+            Aucun article disponible pour le moment
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.container}>
+        <Text style={styles.heading}>Derniers articles</Text>
+        <FlatList
+          data={validItemList}
+          numColumns={2}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <PostItem post={item} />}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView className="py-8 px-6 bg-white flex-1">
       <Header />
@@ -111,7 +164,7 @@ export default function HomeScreen() {
       {/* Category List */}
       <Categories categoryList={categoryList} />
       {/* Latest Item List */}
-      <LatestItemList latestItemList={latestItemList} heading={'Latest items'} />
+      {renderLatestItems()}
     </SafeAreaView>
   );
 }
