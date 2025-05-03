@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getFirestore, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { app, db, auth, storage } from '../../firebase';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { runInitialization } from '../utils/initializeSubcategories';
+import { FontAwesome } from '@expo/vector-icons';
 
 // Liste des utilisateurs administrateurs (emails)
 const ADMIN_EMAILS = [
@@ -28,7 +28,6 @@ export default function ProfileScreen() {
     const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [initializing, setInitializing] = useState(false);
 
     // Vérifier si l'utilisateur est un administrateur
     useEffect(() => {
@@ -76,7 +75,7 @@ export default function ProfileScreen() {
     const menuList = [
         {
             id: 1,
-            name: 'My product',
+            name: 'My Products',
             icon: diary,
             path: 'MyProducts'
         },
@@ -84,53 +83,71 @@ export default function ProfileScreen() {
             id: 2,
             name: 'Explore',
             icon: Search,
-            path: 'explore'
+            path: 'Explore'
         },
         {
             id: 3,
-            name: 'Mes messages',
+            name: 'Favorites',
+            icon: 'heart',
+            iconType: 'fontawesome',
+            path: 'FavoritesScreen'
+        },
+        {
+            id: 4,
+            name: 'Recently Viewed',
+            icon: 'history',
+            iconType: 'fontawesome',
+            path: 'RecentlyViewedScreen'
+        },
+        {
+            id: 5,
+            name: 'Compare',
+            icon: 'balance-scale',
+            iconType: 'fontawesome',
+            path: 'CompareProductsScreen'
+        },
+        {
+            id: 6,
+            name: 'Price Alerts',
+            icon: 'bell',
+            iconType: 'fontawesome',
+            path: 'PriceAlertsScreen'
+        },
+        {
+            id: 7,
+            name: 'Recommendations',
+            icon: 'thumbs-up',
+            iconType: 'fontawesome',
+            path: 'RecommendationsScreen'
+        },
+        {
+            id: 8,
+            name: 'Messages',
             icon: 'chatbubbles-outline',
             path: 'UserChats',
             showBadge: hasUnreadMessages,
             badgeCount: unreadCount
         },
         {
-            id: 4,
+            id: 9,
             name: 'LogOut',
             icon: LogOut
         }
     ];
-
-    // Fonction pour initialiser les sous-catégories
-    const handleInitializeSubcategories = async () => {
-        try {
-            setInitializing(true);
-            const result = await runInitialization();
-            
-            if (result.success) {
-                Alert.alert(
-                    'Succès', 
-                    `${result.count} sous-catégories ont été initialisées dans Firestore.`
-                );
-            } else {
-                Alert.alert(
-                    'Information', 
-                    result.message || 'Les sous-catégories existent déjà ou il y a eu une erreur.'
-                );
-            }
-        } catch (error) {
-            console.error('Erreur lors de l\'initialisation des sous-catégories:', error);
-            Alert.alert('Erreur', 'Une erreur s\'est produite lors de l\'initialisation des sous-catégories.');
-        } finally {
-            setInitializing(false);
-        }
-    };
 
     const onMenuPress = (item) => {
         if (item.name == 'LogOut') {
             signOut();
             return;
         }
+        
+        if (item.name == 'Explore') {
+            // Navigate to the Explore tab
+            navigation.navigate('Explore', { screen: 'explore-tab' });
+            return;
+        }
+        
+        // For all other items, navigate within the Profile stack
         item?.path ? navigation.navigate(item.path) : null;
     };
 
@@ -170,7 +187,18 @@ export default function ProfileScreen() {
                             m-4 rounded-lg border-blue-400
                             bg-blue-50 mx-2 mt-4"
                     >
-                        {typeof item.icon === 'string' ? (
+                        {item.iconType === 'fontawesome' ? (
+                            <View style={styles.iconContainer}>
+                                <FontAwesome name={item.icon} size={30} color="#3b82f6" />
+                                {item.showBadge && (
+                                    <View style={styles.badgeMenu}>
+                                        <Text style={styles.badgeText}>
+                                            {item.badgeCount > 9 ? '9+' : item.badgeCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        ) : typeof item.icon === 'string' ? (
                             <View style={styles.iconContainer}>
                                 <Ionicons name={item.icon} size={30} color="#3b82f6" />
                                 {item.showBadge && (
@@ -191,86 +219,35 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                 )}
             />
-
-            {/* Section de gestion des sous-catégories (accessible à tous les utilisateurs) */}
-            <View style={styles.adminSection}>
-                <Text style={styles.adminTitle}>Gestion des catégories</Text>
-                
-                <TouchableOpacity 
-                    style={[styles.adminButton, initializing && styles.disabledButton]}
-                    onPress={handleInitializeSubcategories}
-                    disabled={initializing}
-                >
-                    {initializing ? (
-                        <ActivityIndicator size="small" color="white" />
-                    ) : (
-                        <Text style={styles.adminButtonText}>
-                            Initialiser les sous-catégories
-                        </Text>
-                    )}
-                </TouchableOpacity>
-            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     notificationDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: '#ef4444',
-        marginLeft: 8,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: 'red',
+        marginLeft: 5,
     },
     badgeMenu: {
         position: 'absolute',
-        top: -6,
-        right: -6,
-        backgroundColor: '#ef4444',
+        top: -5,
+        right: -5,
+        backgroundColor: 'red',
         borderRadius: 10,
         minWidth: 20,
         height: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 4,
     },
     badgeText: {
         color: 'white',
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: 'bold',
     },
     iconContainer: {
-        width: 50,
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
         position: 'relative',
-    },
-    adminSection: {
-        marginTop: 30,
-        padding: 15,
-        backgroundColor: '#f8fafc',
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-    },
-    adminTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#334155',
-    },
-    adminButton: {
-        backgroundColor: '#4f46e5',
-        padding: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    disabledButton: {
-        backgroundColor: '#a5a5a5',
-    },
-    adminButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
+    }
 });

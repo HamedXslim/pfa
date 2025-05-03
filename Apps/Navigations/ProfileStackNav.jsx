@@ -1,11 +1,17 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 import { app, db, auth, storage } from '../../firebase';
-import ProductDetail from '../Screens/ProductDetail';
+import ProductDetail from '../Components/ProductDetail';
 import ProfileScreen from '../Screens/ProfileScreen';
-import MyProducts from '../Screens/MyProducts';
+import MyProducts from '../Components/MyProducts';
 import ChatScreen from '../Screens/ChatScreen';
-import UserChats from '../Screens/UserChats';
+import UserChats from '../Components/UserChats';
+import FavoritesScreen from '../Screens/FavoritesScreen';
+import RecentlyViewedScreen from '../Screens/RecentlyViewedScreen';
+import CompareProductsScreen from '../Screens/CompareProductsScreen';
+import PriceAlertsScreen from '../Screens/PriceAlertsScreen';
+import RecommendationsScreen from '../Screens/RecommendationsScreen';
+import ReviewsScreen from '../Screens/ReviewsScreen';
 import { createStackNavigator } from '@react-navigation/stack';
 const Stack=createStackNavigator();
 export default function ProfileStackNav() {
@@ -20,6 +26,42 @@ options={{
     headerStyle: {backgroundColor: '#3b82f6'},
     headerTintColor: '#fff',
     headerTitle:'Mes annonces'
+ }} />
+<Stack.Screen name='FavoritesScreen' component={FavoritesScreen}
+  options={{
+    headerStyle: {backgroundColor: '#3b82f6'},
+    headerTintColor: '#fff',
+    headerTitle:'Mes favoris'
+ }} />
+<Stack.Screen name='RecentlyViewedScreen' component={RecentlyViewedScreen}
+  options={{
+    headerStyle: {backgroundColor: '#3b82f6'},
+    headerTintColor: '#fff',
+    headerTitle:'Recently Viewed'
+ }} />
+<Stack.Screen name='CompareProductsScreen' component={CompareProductsScreen}
+  options={{
+    headerStyle: {backgroundColor: '#3b82f6'},
+    headerTintColor: '#fff',
+    headerTitle:'Compare Products'
+ }} />
+<Stack.Screen name='PriceAlertsScreen' component={PriceAlertsScreen}
+  options={{
+    headerStyle: {backgroundColor: '#3b82f6'},
+    headerTintColor: '#fff',
+    headerTitle:'Price Alerts'
+ }} />
+<Stack.Screen name='RecommendationsScreen' component={RecommendationsScreen}
+  options={{
+    headerStyle: {backgroundColor: '#3b82f6'},
+    headerTintColor: '#fff',
+    headerTitle:'Recommendations'
+ }} />
+<Stack.Screen name='ReviewsScreen' component={ReviewsScreen}
+  options={{
+    headerStyle: {backgroundColor: '#3b82f6'},
+    headerTintColor: '#fff',
+    headerTitle:'Reviews'
  }} />
  <Stack.Screen name='product-detail' component={ProductDetail}
      options={{

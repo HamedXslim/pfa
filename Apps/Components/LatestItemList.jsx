@@ -1,10 +1,16 @@
-import { View, Text, StyleSheet, FlatList } from 'react-native'
-import React from 'react'
-import PostItem from '../../Components/PostItem'
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React from 'react';
+import PostItem from '../../Components/PostItem';
 
 export default function LatestItemList({ latestItemList }) {
-  
-  if (!latestItemList || latestItemList.length === 0) {
+  // Ensure latestItemList is an array and filter out invalid items
+  const validItemList = Array.isArray(latestItemList)
+    ? latestItemList.filter(item => item && typeof item === 'object' && item.id && item.image && typeof item.image === 'string')
+    : [];
+
+  console.log('LatestItemList validItemList:', validItemList);
+
+  if (validItemList.length === 0) {
     return (
       <View style={styles.container}>
         <Text style={styles.noItemsText}>
@@ -18,7 +24,7 @@ export default function LatestItemList({ latestItemList }) {
     <View style={styles.container}>
       <Text style={styles.heading}>Derniers articles</Text>
       <FlatList
-        data={latestItemList}
+        data={validItemList}
         numColumns={2}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <PostItem post={item} />}
@@ -26,7 +32,7 @@ export default function LatestItemList({ latestItemList }) {
         scrollEnabled={false}
       />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -45,5 +51,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginTop: 20,
-  }
+  },
 });

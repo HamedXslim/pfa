@@ -3,8 +3,8 @@ import { View, Text } from 'react-native';
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../Screens/HomeScreen';
-import ProductDetail from '../Screens/ProductDetail';
-import ItemList from '../Screens/ItemList';
+import ProductDetail from '../Components/ProductDetail';
+import ItemList from '../Components/ItemList';
 import ChatScreen from '../Screens/ChatScreen';
 
 const Stack = createStackNavigator();

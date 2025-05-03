@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { app, db, auth, storage } from '../../firebase';
 import { useRoute } from '@react-navigation/native';
-import LatestItemList from '../Components/HomeScreen/LatestItemList';
+
 
 export default function ItemList() {
     const { params } = useRoute();

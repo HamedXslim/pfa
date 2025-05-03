@@ -2,7 +2,7 @@ import { View, Text } from 'react-native'
 import React from 'react'
 import ExploreScreen from '../Screens/ExploreScreen';
 import { createStackNavigator } from '@react-navigation/stack'
-import ProductDetail from '../Screens/ProductDetail';
+import ProductDetail from '../Components/ProductDetail';
 import ChatScreen from '../Screens/ChatScreen';
 const stack=createStackNavigator();
 export default function ScreenStackNav() {

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { collection, getDocs, getFirestore, query, where } from 'firebase/firestore'
 import { useUser } from '@clerk/clerk-expo'
 
-import LatestItemList from '../Components/HomeScreen/LatestItemList'
+import LatestItemList from './LatestItemList'
 import { app, db, auth, storage } from '../../firebase';
 import { useNavigation } from '@react-navigation/native'
 

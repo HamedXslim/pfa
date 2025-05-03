@@ -1,0 +1,210 @@
+@startuml ddc_diagram
+skinparam monochrome true
+
+' Entités principales
+class Category {
+  +icon: String
+  +name: String
+}
+
+class Chats {
+  +lastMessage: String
+  +lastMessageSender: String
+  +lastMessageTime: String
+  +postID: String
+}
+
+class Participants {
+  +email: String
+}
+
+class Product {
+  +image: String
+  +price: String
+  +title: String
+}
+
+class Favorites {
+  +addedAt: String
+  +postID: String
+  +userEmail: String
+}
+
+class PriceAlerts {
+  +createdAt: String
+  +currentPrice: String
+  +postID: String
+  +targetPrice: String
+  +userEmail: String
+}
+
+class RecentlyViewed {
+  +postID: String
+  +userEmail: String
+  +viewedAt: String
+}
+
+class Sliders {
+  +image: String
+}
+
+interface Subcategory {
+  +categoryName: String
+  +createdAt: String
+  +label: String
+  +name: String
+  +order: Integer
+  +placeholder: String
+  +required: Boolean
+  +type: String
+}
+
+class Options {
+  +value: String
+}
+
+class UserPost {
+  +address: String
+  +category: String
+  +createdAt: String
+  +description: String
+  +image: String
+  +phoneNumber: String
+  +price: String
+  +title: String
+  +userEmail: String
+  +userImage: String
+  +userName: String
+}
+
+class SocialMedia {
+  +facebook: String
+  +instagram: String
+  +twitter: String
+}
+
+class SubcategoryDetails {
+  +brand: String
+  +color: String
+  +fuelType: String
+  +mileage: String
+  +model: String
+  +transmission: String
+  +year: String
+}
+
+' Sous-catégories spécifiques
+class CarSubcategory {
+  +brand: String
+  +model: String
+  +year: Integer
+  +mileage: Integer
+  +fuelType: String
+  +transmission: String
+  +color: String
+}
+
+class ClothingSubcategory {
+  +type: String
+  +gender: String
+  +size: String
+  +color: String
+  +material: String
+  +condition: String
+  +brand: String
+}
+
+class FurnitureSubcategory {
+  +type: String
+  +material: String
+  +color: String
+  +dimensions: String
+  +age: String
+  +condition: String
+  +assembly: String
+  +brand: String
+}
+
+class ElectronicsSubcategory {
+  +type: String
+  +brand: String
+  +model: String
+  +age: String
+  +condition: String
+  +storage: String
+  +color: String
+}
+
+class PropertiesSubcategory {
+  +propertyType: String
+  +rooms: Integer
+  +area: Integer
+  +transactionType: String
+  +features: String
+  +yearBuilt: Integer
+  +floor: Integer
+  +bathrooms: Integer
+}
+
+class JobsSubcategory {
+  +jobType: String
+  +sector: String
+  +experience: String
+  +education: String
+  +salary: String
+  +location: String
+  +workMode: String
+  +company: String
+}
+
+class HobbySubcategory {
+  +hobbyType: String
+  +condition: String
+  +brand: String
+  +age: String
+  +specificType: String
+  +material: String
+}
+
+class ServicesSubcategory {
+  +serviceType: String
+  +experience: String
+  +availability: String
+  +pricing: String
+  +location: String
+  +certification: String
+}
+
+class AnimalsSubcategory {
+  +animalType: String
+  +breed: String
+  +age: String
+  +gender: String
+  +vaccinated: String
+  +neutered: String
+  +purebreed: String
+}
+
+' Relations avec notations UML classiques
+Category "1" -- "0..*" UserPost : association
+Category "1" -- "0..*" Subcategory : association
+UserPost "1" -- "0..*" Chats : association
+UserPost "1" -- "0..*" Favorites : association
+UserPost "1" -- "0..*" PriceAlerts : association
+UserPost "1" -- "0..*" RecentlyViewed : association
+Chats "1" -- "1..*" Participants : association
+Chats "1" -- "0..1" Product : association
+Subcategory "1" -- "0..*" Options : association
+UserPost "1" -- "0..1" SubcategoryDetails : composition
+UserPost "1" -- "0..1" SocialMedia : composition
+Subcategory <|.. CarSubcategory : generalization
+Subcategory <|.. ClothingSubcategory : generalization
+Subcategory <|.. FurnitureSubcategory : generalization
+Subcategory <|.. ElectronicsSubcategory : generalization
+Subcategory <|.. PropertiesSubcategory : generalization
+Subcategory <|.. JobsSubcategory : generalization
+Subcategory <|.. HobbySubcategory : generalization
+Subcategory <|.. ServicesSubcategory : generalization
+Subcategory <|.. AnimalsSubcategory : generalization
+
+@enduml
