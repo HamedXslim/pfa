@@ -2,7 +2,7 @@ import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, ActivityIndi
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-expo';
 import { useNavigation } from '@react-navigation/native';
-import { getFirestore, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { app, db, auth, storage } from '../../firebase';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -23,20 +23,102 @@ export default function UserChats() {
       orderBy('lastMessageTime', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const chatsList = [];
+      const notificationsToCreate = [];
+      
+      // Ajouter des logs pour débogage
+      console.log(`Observing ${snapshot.docs.length} chats for user: ${user.primaryEmailAddress.emailAddress}`);
+      
+      snapshot.docChanges().forEach((change) => {
+        // Vérifier si c'est un nouveau message ou une mise à jour
+        if (change.type === 'added' || change.type === 'modified') {
+          const chatData = change.doc.data();
+          console.log(`Chat ${change.doc.id} ${change.type}:`, {
+            lastMessageSender: chatData.lastMessageSender,
+            lastMessage: chatData.lastMessage,
+            notificationSent: chatData.notificationSent,
+            readBy: chatData.readBy
+          });
+          
+          // Vérifier si c'est un message non lu envoyé par quelqu'un d'autre
+          const isUnread = 
+            chatData.lastMessageSender && 
+            chatData.lastMessageSender !== user.primaryEmailAddress.emailAddress &&
+            (!chatData.readBy || !chatData.readBy.includes(user.primaryEmailAddress.emailAddress));
+          
+          // Si c'est un nouveau message non lu et que l'expéditeur n'est pas l'utilisateur actuel
+          // et que la notification n'a pas encore été envoyée
+          if (isUnread && chatData.lastMessage && chatData.notificationSent !== true) {
+            console.log(`Preparing notification for chat ${change.doc.id}`);
+            // Préparer une notification à créer
+            notificationsToCreate.push({
+              chatId: change.doc.id,
+              productTitle: chatData.product?.title || 'Produit',
+              senderEmail: chatData.lastMessageSender,
+              message: chatData.lastMessage || 'Nouveau message'
+            });
+          }
+        }
+      });
+      
+      // Récupérer les données complètes pour l'affichage
       snapshot.forEach((doc) => {
         const chatData = doc.data();
+        const isUnread = 
+          chatData.lastMessageSender && 
+          chatData.lastMessageSender !== user.primaryEmailAddress.emailAddress &&
+          (!chatData.readBy || !chatData.readBy.includes(user.primaryEmailAddress.emailAddress));
+        
         chatsList.push({
           id: doc.id,
           ...chatData,
-          isUnread: 
-            chatData.lastMessageSender && 
-            chatData.lastMessageSender !== user.primaryEmailAddress.emailAddress &&
-            (!chatData.readBy || !chatData.readBy.includes(user.primaryEmailAddress.emailAddress)),
+          isUnread: isUnread,
           lastMessageTime: chatData.lastMessageTime?.toDate() || new Date()
         });
       });
+      
+      // Créer des notifications pour les nouveaux messages
+      if (notificationsToCreate.length > 0) {
+        console.log(`Creating ${notificationsToCreate.length} notifications for new messages`);
+        
+        try {
+          const notificationsRef = collection(db, 'Notifications');
+          
+          for (const notifData of notificationsToCreate) {
+            console.log('Creating notification for chat:', notifData.chatId);
+            
+            // Créer une notification pour chaque nouveau message
+            const notificationData = {
+              userEmail: user.primaryEmailAddress.emailAddress,
+              postId: notifData.chatId, // Utiliser chatId comme postId pour pouvoir naviguer vers le chat
+              message: `Nouveau message: ${notifData.message} (${notifData.productTitle})`,
+              createdAt: serverTimestamp(),
+              read: false,
+              type: 'message',
+              senderEmail: notifData.senderEmail
+            };
+            
+            console.log('Notification data:', notificationData);
+            
+            // Ajouter la notification à Firestore
+            const notifRef = await addDoc(notificationsRef, notificationData);
+            console.log('Notification created with ID:', notifRef.id);
+            
+            // Marquer que la notification a été envoyée pour ce chat
+            const chatDoc = doc(db, 'Chats', notifData.chatId);
+            await updateDoc(chatDoc, {
+              notificationSent: true
+            });
+            console.log('Chat marked as notified:', notifData.chatId);
+          }
+        } catch (error) {
+          console.error('Error creating message notifications:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+        }
+      } else {
+        console.log('No new notifications to create');
+      }
       
       setChats(chatsList);
       setLoading(false);

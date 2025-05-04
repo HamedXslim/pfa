@@ -35,17 +35,25 @@ export default function NotificationsScreen() {
       setLoading(true);
       const db = firebase.firestore();
       
+      console.log('Fetching notifications for user:', user.primaryEmailAddress.emailAddress);
+      
       // Modified query to avoid requiring a composite index
       const notificationsRef = db.collection('Notifications')
         .where('userEmail', '==', user.primaryEmailAddress.emailAddress);
 
       const unsubscribe = notificationsRef.onSnapshot((snapshot) => {
+        console.log(`Found ${snapshot.docs.length} notifications`);
+        
         // Sort notifications client-side by createdAt in descending order
         const notificationsData = snapshot.docs
-          .map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
+          .map(doc => {
+            const data = doc.data();
+            console.log('Notification data:', { id: doc.id, type: data.type, message: data.message });
+            return {
+              id: doc.id,
+              ...data
+            };
+          })
           .sort((a, b) => {
             // Handle missing or invalid createdAt fields
             if (!a.createdAt) return 1;  // a goes after b
@@ -63,6 +71,10 @@ export default function NotificationsScreen() {
               return 0; // Keep original order if error occurs
             }
           });
+        
+        // Log notification types for debugging
+        const messageNotifications = notificationsData.filter(n => n.type === 'message');
+        console.log(`Found ${messageNotifications.length} message notifications`);
           
         setNotifications(notificationsData);
         setLoading(false);
@@ -91,7 +103,14 @@ export default function NotificationsScreen() {
       className={`bg-white rounded-lg shadow-sm mb-3 mx-2 p-4 ${item.read ? 'opacity-70' : ''}`}
       onPress={() => {
         markAsRead(item.id);
-        navigation.navigate('product-detail', { product: { id: item.postId } });
+        // Naviguer différemment selon le type de notification
+        if (item.type === 'message') {
+          // Pour les notifications de message, naviguer vers le ChatScreen
+          navigation.navigate('ChatScreen', { chatId: item.postId, product: { title: 'Conversation' } });
+        } else {
+          // Pour les autres types de notifications (price_alert, etc.), naviguer vers le détail du produit
+          navigation.navigate('product-detail', { product: { id: item.postId } });
+        }
       }}
     >
       <Text className="text-gray-700">{item.message}</Text>

@@ -25,7 +25,8 @@ import {
     updateDoc, 
     arrayUnion, 
     where, 
-    getDocs 
+    getDocs,
+    getDoc 
   } from 'firebase/firestore';
   import { useUser } from '@clerk/clerk-expo';
   import { app, db, auth, storage } from '../../firebase';
@@ -47,8 +48,28 @@ import {
               Alert.alert('Error', 'Invalid chat ID.');
               return;
           }
-  
+
           console.log("Chargement des messages pour le chat:", chatId);
+          
+          // Vérifier l'état actuel du chat
+          const checkChatStatus = async () => {
+              try {
+                  const chatDocRef = doc(db, 'Chats', chatId);
+                  const chatDoc = await getDoc(chatDocRef);
+                  if (chatDoc.exists()) {
+                      console.log('Chat status:', {
+                          notificationSent: chatDoc.data().notificationSent,
+                          readBy: chatDoc.data().readBy,
+                          lastMessageSender: chatDoc.data().lastMessageSender
+                      });
+                  }
+              } catch (error) {
+                  console.error('Error checking chat status:', error);
+              }
+          };
+          
+          checkChatStatus();
+          
           const messagesRef = collection(db, 'Chats', chatId, 'messages');
           const q = query(messagesRef, orderBy('timestamp', 'asc'));
           
@@ -77,10 +98,10 @@ import {
                   setLoading(false);
                   Alert.alert('Error', 'Failed to load messages: ' + error.message);
               });
-  
+
               // Marquer les messages comme lus
               markMessagesAsRead();
-  
+
               return () => unsubscribe();
           } catch (error) {
               console.error('Erreur lors de l\'initialisation du listener:', error);
@@ -96,9 +117,10 @@ import {
           try {
               const chatRef = doc(db, 'Chats', chatId);
               await updateDoc(chatRef, {
-                  readBy: arrayUnion(user.primaryEmailAddress.emailAddress)
+                  readBy: arrayUnion(user.primaryEmailAddress.emailAddress),
+                  notificationSent: false
               });
-              console.log("Messages marqués comme lus");
+              console.log("Messages marqués comme lus et flag de notification réinitialisé");
           } catch (error) {
               console.error("Erreur lors du marquage des messages comme lus:", error);
           }
@@ -131,7 +153,8 @@ import {
                   lastMessage: messageText,
                   lastMessageTime: serverTimestamp(),
                   lastMessageSender: user.primaryEmailAddress.emailAddress,
-                  readBy: [user.primaryEmailAddress.emailAddress] // Réinitialiser les lecteurs
+                  readBy: [user.primaryEmailAddress.emailAddress], // Réinitialiser les lecteurs
+                  notificationSent: false // Réinitialiser le flag de notification pour permettre aux destinataires de recevoir une notification
               });
               console.log("Informations du chat mises à jour");
   
