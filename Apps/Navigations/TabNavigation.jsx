@@ -51,17 +51,12 @@ export default function TabNavigation() {
           tabBarIcon:({color,size})=>(
             <Ionicons name="person-circle" size={size} color={color} />
           ),
-          unmountOnBlur: true // This will reset the stack when navigating away
+          unmountOnBlur: false // Ne pas réinitialiser la pile en quittant l'onglet
         }}
         listeners={({ navigation }) => ({
           tabPress: e => {
-            // When tab is pressed, reset the stack to go to the main profile screen
-            const state = navigation.getState();
-            // Check if we're already on the Profile tab
-            if (state.index === 3) { // Profile is the 4th tab (index 3)
-              // Reset the Profile stack to its first screen
-              navigation.navigate('Profile', { screen: 'profile-tab' });
-            }
+            // Toujours naviguer vers l'écran principal du profil quand on appuie sur l'onglet
+            navigation.navigate('Profile', { screen: 'profile-tab' });
           },
         })}
       />
